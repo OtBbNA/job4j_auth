@@ -1,53 +1,58 @@
 package ru.job4j.auth.controller;
 
-import org.springframework.http.HttpStatus;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.annotation.*;
 import ru.job4j.auth.model.Person;
-import ru.job4j.auth.repository.PersonRepository;
+import ru.job4j.auth.service.PersonService;
 
-import java.util.List;
+import java.sql.SQLException;
+import java.util.Collection;
 
 @RestController
 @RequestMapping("/person")
+@AllArgsConstructor
 public class PersonController {
-    private final PersonRepository persons;
 
-    public PersonController(final PersonRepository persons) {
-        this.persons = persons;
-    }
+    private final PersonService personService;
 
     @GetMapping("/")
-    public List<Person> findAll() {
-        return (List<Person>) this.persons.findAll();
+    public Collection<Person> findAll() {
+        return this.personService.findAll();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Person> findById(@PathVariable int id) {
-        var person = this.persons.findById(id);
-        return new ResponseEntity<Person>(
-                person.orElse(new Person()),
-                person.isPresent() ? HttpStatus.OK : HttpStatus.NOT_FOUND
-        );
+        return personService.findById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/")
-    public ResponseEntity<Person> create(@RequestBody Person person) {
-        return new ResponseEntity<Person>(
-                this.persons.save(person),
-                HttpStatus.CREATED
-        );
+    public ResponseEntity<Person> create(@RequestBody Person person) throws SQLException {
+        return this.personService.save(person)
+                .map(ResponseEntity::ok)
+                .orElseThrow(() -> new SQLException("Ошибка при сохранении данных"));
     }
 
     @PutMapping("/")
     public ResponseEntity<Void> update(@RequestBody Person person) {
-        this.persons.save(person);
-        return ResponseEntity.ok().build();
+        var getPersonStatus = personService.existsById(person.getId());
+        if (getPersonStatus) {
+            personService.save(person);
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable int id) {
-        this.persons.deleteById(id);
+        boolean exists = this.personService.existsById(id);
+        if (!exists) {
+            return ResponseEntity.notFound().build();
+        }
+        this.personService.deleteById(id);
         return ResponseEntity.ok().build();
     }
 }
