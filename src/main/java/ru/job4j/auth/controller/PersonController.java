@@ -9,6 +9,7 @@ import ru.job4j.auth.service.PersonService;
 
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/person")
@@ -37,21 +38,14 @@ public class PersonController {
     }
 
     @PutMapping("/")
-    public ResponseEntity<Void> update(@RequestBody Person person) {
-        var getPersonStatus = personService.existsById(person.getId());
-        if (getPersonStatus) {
-            personService.save(person);
-            return ResponseEntity.ok().build();
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<Person> update(@PathVariable Long id, @RequestBody Person person) {
+        Optional<Person> updatedPerson = personService.update(person);
+        return updatedPerson.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable int id) {
-        boolean exists = this.personService.existsById(id);
-        if (!exists) {
-            return ResponseEntity.notFound().build();
-        }
         this.personService.deleteById(id);
         return ResponseEntity.ok().build();
     }

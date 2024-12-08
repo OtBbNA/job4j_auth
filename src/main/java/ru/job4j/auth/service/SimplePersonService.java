@@ -26,16 +26,31 @@ public class SimplePersonService implements PersonService {
 
     @Override
     public Optional<Person> save(Person person) {
-        return Optional.ofNullable(personRepository.save(person));
+        return Optional.of(personRepository.save(person));
+    }
+
+    @Override
+    public Optional<Person> update(Person person) {
+        if (personRepository.existsById(person.getId())) {
+            return Optional.of(personRepository.save(person));
+        }
+        return Optional.empty();
     }
 
     @Override
     public void deleteById(int id) {
-        personRepository.deleteById(id);
+        if (personRepository.existsById(id)) {
+            personRepository.deleteById(id);
+        }
     }
 
     @Override
     public boolean existsById(int id) {
         return personRepository.existsById(id);
+    }
+
+    @Override
+    public Optional<Person> findByLogin(String username) {
+        return personRepository.findByLogin(username);
     }
 }

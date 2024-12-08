@@ -13,7 +13,11 @@ public interface PersonService {
 
     Optional<Person> save(Person person);
 
+    Optional<Person> update(Person person);
+
     void deleteById(int id);
 
     boolean existsById(int id);
+
+    Optional<Person> findByLogin(String username);
 }
