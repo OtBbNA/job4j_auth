@@ -3,6 +3,7 @@ package ru.job4j.auth.controller;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import ru.job4j.auth.model.Person;
 import ru.job4j.auth.service.PersonService;
@@ -17,8 +18,9 @@ import java.util.Optional;
 public class PersonController {
 
     private final PersonService personService;
+    private final BCryptPasswordEncoder encoder;
 
-    @GetMapping("/")
+    @GetMapping("/all")
     public Collection<Person> findAll() {
         return this.personService.findAll();
     }
@@ -30,8 +32,10 @@ public class PersonController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/")
+    @PostMapping("/sign-up")
     public ResponseEntity<Person> create(@RequestBody Person person) throws SQLException {
+        System.out.println("Received request to create user: " + person);
+        person.setPassword(encoder.encode(person.getPassword()));
         return this.personService.save(person)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new SQLException("Ошибка при сохранении данных"));

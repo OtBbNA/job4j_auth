@@ -15,6 +15,8 @@ import ru.job4j.auth.filter.JWTAuthenticationFilter;
 import ru.job4j.auth.filter.JWTAuthorizationFilter;
 import ru.job4j.auth.service.UserDetailServiceImpl;
 
+import java.util.Arrays;
+
 import static ru.job4j.auth.filter.JWTAuthenticationFilter.SIGN_UP_URL;
 
 @EnableWebSecurity
@@ -45,8 +47,13 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
-        final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", new CorsConfiguration().applyPermitDefaultValues());
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:8080"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }
