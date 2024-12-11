@@ -25,7 +25,7 @@ public class PersonController {
         return this.personService.findAll();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/get/{id}")
     public ResponseEntity<Person> findById(@PathVariable int id) {
         return personService.findById(id)
                 .map(ResponseEntity::ok)
