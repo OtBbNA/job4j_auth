@@ -31,8 +31,9 @@ public class PersonController {
     private static final Logger LOGGER = LoggerFactory.getLogger(PersonController.class.getSimpleName());
 
     @GetMapping("/all")
-    public Collection<Person> findAll() {
-        return this.personService.findAll();
+    public ResponseEntity<Collection<Person>> findAll() {
+        var getPersons = personService.findAll();
+        return ResponseEntity.ok().body(getPersons);
     }
 
     @GetMapping("/get/{id}")
