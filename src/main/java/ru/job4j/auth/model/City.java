@@ -7,18 +7,16 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "person")
+@Table(name = "cities")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Person {
+public class City {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    private String login;
-    private String password;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "city_id")
-    private City city;
+    @Column(name = "name")
+    private String city;
 }

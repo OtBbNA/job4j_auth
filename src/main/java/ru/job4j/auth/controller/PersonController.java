@@ -10,7 +10,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import ru.job4j.auth.dto.PersonDTO;
 import ru.job4j.auth.model.Person;
+import ru.job4j.auth.service.CityService;
 import ru.job4j.auth.service.PersonService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,6 +28,7 @@ import java.util.Optional;
 public class PersonController {
 
     private final PersonService personService;
+    private final CityService cityService;
     private final BCryptPasswordEncoder encoder;
     private final ObjectMapper objectMapper;
     private static final Logger LOGGER = LoggerFactory.getLogger(PersonController.class.getSimpleName());
@@ -46,19 +49,16 @@ public class PersonController {
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<Person> create(@RequestBody Person person) {
-        person.setPassword(encoder.encode(person.getPassword()));
-        return this.personService.save(person)
+    public ResponseEntity<Person> create(@RequestBody PersonDTO person) {
+        var setPerson = new Person(
+                person.getId(),
+                person.getLogin(),
+                encoder.encode(person.getPassword()),
+                cityService.findById(person.getCityId()).orElseThrow()
+        );
+        return this.personService.save(setPerson)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new RuntimeException("Error saving data"));
-    }
-
-    @PutMapping("/update/{id}")
-    public ResponseEntity<Person> update(@PathVariable Integer id, @RequestBody Person person) {
-        person.setId(id);
-        Optional<Person> updatedPerson = personService.update(person);
-        return updatedPerson.map(ResponseEntity::ok)
-                .orElseThrow(() -> new RuntimeException("Error while trying to update"));
     }
 
     @DeleteMapping("/delete/{id}")
@@ -69,6 +69,21 @@ public class PersonController {
         }
         this.personService.deleteById(id);
         return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/update/{id}")
+    public ResponseEntity<Person> update(@PathVariable Integer id, @RequestBody PersonDTO person) {
+        var setPerson = new Person(
+                id,
+                person.getLogin(),
+                person.getPassword(),
+                cityService.findById(person.getCityId()).orElseThrow()
+        );
+        return personService.update(setPerson)
+                .map(p -> ResponseEntity.ok().body(p))
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Error while trying to update"
+                ));
     }
 
     @ExceptionHandler(value = {RuntimeException.class})
