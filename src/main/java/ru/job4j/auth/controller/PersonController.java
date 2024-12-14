@@ -3,13 +3,16 @@ package ru.job4j.auth.controller;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import ru.job4j.auth.config.Operation;
 import ru.job4j.auth.dto.PersonDTO;
 import ru.job4j.auth.model.Person;
 import ru.job4j.auth.service.CityService;
@@ -17,6 +20,8 @@ import ru.job4j.auth.service.PersonService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.ConstraintViolationException;
+import javax.validation.Valid;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,7 +54,7 @@ public class PersonController {
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<Person> create(@RequestBody PersonDTO person) {
+    public ResponseEntity<Person> create(@Validated(Operation.OnCreate.class) @RequestBody PersonDTO person) {
         var setPerson = new Person(
                 person.getId(),
                 person.getLogin(),
@@ -62,7 +67,7 @@ public class PersonController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Void> delete(@PathVariable int id) {
+    public ResponseEntity<Void> delete(@Validated(Operation.OnDelete.class) @PathVariable int id) {
         var validate = personService.findById(id);
         if (validate.isEmpty()) {
             throw new NullPointerException("User with such id does not exist or has already been deleted");
@@ -72,11 +77,11 @@ public class PersonController {
     }
 
     @PatchMapping("/update/{id}")
-    public ResponseEntity<Person> update(@PathVariable Integer id, @RequestBody PersonDTO person) {
+    public ResponseEntity<Person> update(@PathVariable Integer id, @Validated(Operation.OnUpdate.class) @RequestBody PersonDTO person) {
         var setPerson = new Person(
                 id,
                 person.getLogin(),
-                person.getPassword(),
+                encoder.encode(person.getPassword()),
                 cityService.findById(person.getCityId()).orElseThrow()
         );
         return personService.update(setPerson)
@@ -86,7 +91,7 @@ public class PersonController {
                 ));
     }
 
-    @ExceptionHandler(value = {RuntimeException.class})
+    @ExceptionHandler(value = {RuntimeException.class, DataIntegrityViolationException.class, ConstraintViolationException.class})
     public void exceptionHandler(Exception e, HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setStatus(HttpStatus.BAD_REQUEST.value());
         response.setContentType("application/json");
